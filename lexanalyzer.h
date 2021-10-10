@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <stack>
 #include "interface.h"
 
 
@@ -11,6 +12,10 @@ using namespace std;
 
 class Lexical_Analyzer
 {
+    
+
+public:
+
     enum class categoryType
     {
         KEYWORD,
@@ -29,8 +34,6 @@ class Lexical_Analyzer
         INDENT,
         UNKNOWN
     };
-
-public:
 
     friend ostream& operator<<(ostream& os, categoryType cat)
     {
@@ -73,9 +76,9 @@ public:
     {
         vector<pair<string, categoryType>> v2; //empty vector to add to tokenInfo
         pair<string, categoryType> dual; //pairs to be added to tokenInfo[i]
-                
+
         tokenInfo.push_back(v2); //creates an empty vector of tokenLineType
-          
+
         for (int i = 0; i < fileLine.length(); i++)
         {
             string temp = "";
@@ -106,6 +109,7 @@ public:
                 dual.second = categoryType::NUMERIC_LITERAL; //adds token
                 dual.first = temp;
                 tokenInfo[lineCount].push_back(dual);
+                i--;
             }
             else if (isalpha(fileLine[i])) //if alphabet character
             {
@@ -114,16 +118,14 @@ public:
                     temp = temp + fileLine[i];
                     i++;
                 }
+
                 if (temp == "print" || temp == "elif" || temp == "if" || temp == "else" || temp == "while" || temp == "int" || temp == "input") //if keyword
                     dual.second = categoryType::KEYWORD;
                 else if (temp == "and" || temp == "or" || temp == "not") //if logical op
-                {
-                    dual.first = temp;
                     dual.second = categoryType::LOGICAL_OP;
-                    tokenInfo[lineCount].push_back(dual);
-                }
-                else //if neither of above = identifier
+                else //if neither of above -> identifier
                     dual.second = categoryType::IDENTIFIER;
+
                 dual.first = temp;
                 tokenInfo[lineCount].push_back(dual);
                 i--;
@@ -154,28 +156,39 @@ public:
             }
             else if (fileLine[i] == '>' || fileLine[i] == '<') //if relational op
             {
-                if (fileLine[i + 1] == '=')
+                temp = fileLine[i];
+
+                if (fileLine[i + 1] == '=')//if next char also equal then relational op
                 {
-                    temp = fileLine[i] + fileLine[i + 1];
+                    temp = temp + fileLine[i + 1];
+                    dual.first = temp;
+                    dual.second = categoryType::RELATIONAL_OP;
+                    tokenInfo[lineCount].push_back(dual);
+                    i++;
+                    continue;
                 }
-                else
-                    temp = fileLine[i];
-                dual.first = temp;
+                else //if not then assignment op
+                    dual.first = fileLine[i];
+
                 dual.second = categoryType::RELATIONAL_OP;
                 tokenInfo[lineCount].push_back(dual);
             }
             else if (fileLine[i] == '=') //if equal
-            {
+            {   
+                temp = fileLine[i];
+                
                 if (fileLine[i + 1] == '=')//if next char also equal then relational op
                 {
-                    temp = fileLine[i] + fileLine[i + 1];
+                    temp = temp + fileLine[i + 1];
                     dual.first = temp;
                     dual.second = categoryType::RELATIONAL_OP;
                     tokenInfo[lineCount].push_back(dual);
+                    i++;
+                    continue;
                 }
                 else //if not then assignment op
                     dual.first = fileLine[i];
-                    
+
                 dual.second = categoryType::ASSIGNMENT_OP;
                 tokenInfo[lineCount].push_back(dual);
             }
@@ -234,10 +247,18 @@ public:
 
         lineCount++;
 
-        
-        
     }
 
+    vector<pair<string, categoryType>> sendData(int lineNumber)
+    {
+        vector<pair<string, categoryType>> tokenData;
+        for (int i = 0; i < tokenInfo[lineNumber].size(); i++)
+        {
+            cout << tokenInfo[lineNumber][i].first << "\t" << tokenInfo[lineNumber][i].second << endl;
+            tokenData.push_back(tokenInfo[lineNumber][i]);
+        }
+        return tokenData;
+    }
 
     void show()
     {
@@ -259,6 +280,36 @@ public:
             cout << "-------------------------------------------------------------------" << endl;
         }
     }
+
+    bool is_expression(string input)
+    {
+        tokenInfo.clear();
+        startLexAnalysis(input, 0);
+
+
+        for (int i = 0; i < tokenInfo[0].size(); i++)
+        {
+            //cout << tokenInfo[0][i].second << endl;
+            if (tokenInfo[0][i].second != categoryType::INDENT)
+                continue;
+            if (tokenInfo[0][i].second != categoryType::RELATIONAL_OP ||
+                tokenInfo[0][i].second != categoryType::LOGICAL_OP ||
+                tokenInfo[0][i].second != categoryType::ARITH_OP ||
+                tokenInfo[0][i].second != categoryType::NUMERIC_LITERAL ||
+                tokenInfo[0][i].second != categoryType::LEFT_PAREN ||
+                tokenInfo[0][i].second != categoryType::RIGHT_PAREN)
+            {
+                tokenInfo.clear();
+                return false;
+            }
+           
+               
+        }
+        tokenInfo.clear();
+        return true;        
+    }
+
+    
 
 
     void clear()

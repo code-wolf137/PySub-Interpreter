@@ -6,6 +6,7 @@
 #include <vector>
 #include <fstream>
 #include "lexanalyzer.h"
+#include "expevaluator.h"
 
 using namespace std;
 
@@ -15,20 +16,24 @@ public:
 
 	Lexical_Analyzer lex;
 
+	expEvaluator eval;
+
 	void startInterface()
 	{
 		// Displays initial menu text
 		cout << "PySUB Interpreter 1.0 on Windows (September 2021)" << endl
-			 << "Enter program lines or read(<filename>.py) at command line interface" << endl
-			 << "Type 'help' for more information or 'quit' to exit" << endl;
+			<< "Enter program lines or read(<filename>.py) at command line interface" << endl
+			<< "Type 'help' for more information or 'quit' to exit" << endl;
 
 		string input;
 		do //interface will loop the input until quit is received
 		{
 			cout << ">>> ";
-			cin >> input;
+			getline(cin, input);
 
 			//options for input
+			
+
 			if (input[0] == 'h' && input[1] == 'e' && input[2] == 'l' && input[3] == 'p')
 			{
 				if (input == "help" || input == "help()") //run help command
@@ -86,6 +91,11 @@ public:
 				clear();
 			else if (input == "quit" || input == "quit()") //runs quit
 				quit();
+			else if (is_expression(input))
+			{
+				eval.infixToPostfix(input);
+				continue;
+			}
 			else
 				cout << "Error unrecognized command." << endl;
 
@@ -217,7 +227,7 @@ public:
 			lineCount++;
 		}
 		file.close(); //close file when done
-				
+
 	}
 
 
@@ -227,7 +237,7 @@ public:
 		{
 			cout << "[" << i << "] " << programCode[i] << endl;
 		}
-		
+
 	}
 
 
@@ -235,6 +245,7 @@ public:
 
 		programCode.clear(); //deletes all lines from the vector
 		lex.clear(); //calls function from lexanalyzer class
+		eval.clear();
 	}
 
 
@@ -245,7 +256,7 @@ public:
 			cout << "Error unrecognized command." << endl;
 			return;
 		}
-				
+
 		lex.show(); //calls function from lexanalyzer class
 	}
 
@@ -260,6 +271,12 @@ public:
 		}
 
 		return data;
+	}
+
+	bool is_expression(string input)
+	{
+		Lexical_Analyzer expressionLex;
+		return expressionLex.is_expression(input);
 	}
 
 
