@@ -5,14 +5,17 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include "lexanalyzer.h"
 
 using namespace std;
 
 class Interface
 {
 public:
-	
-	void startInterface() 
+
+	Lexical_Analyzer lex;
+
+	void startInterface()
 	{
 		// Displays initial menu text
 		cout << "PySUB Interpreter 1.0 on Windows (September 2021)" << endl
@@ -63,6 +66,22 @@ public:
 			}
 			else if (input == "show" || input == "show()") //runs show
 				show();
+			else if (input[0] == 's' && input[1] == 'h' && input[2] == 'o' && input[3] == 'w')
+			{
+				string tokens = "";
+				for (int i = 5; i < input.length(); i++) //retrives file name
+				{
+					if (input[i] == ')')
+					{
+						break;
+					}
+					else
+					{
+						tokens = tokens + input[i];
+					}
+				}
+				show(tokens); //reads filename
+			}
 			else if (input == "clear" || input == "clear()") //runs clear
 				clear();
 			else if (input == "quit" || input == "quit()") //runs quit
@@ -72,11 +91,13 @@ public:
 
 			cout << endl;
 		} while (input != "quit" && input != "quit()"); //menu loop runs until quit is entered
-	} 
-	
+	}
+
+
 	void quit() {
 		exit(0);
 	}
+
 
 	void help() {
 		//help menu displays
@@ -84,7 +105,7 @@ public:
 			<< "* To exit and return to the interpreter, type 'exit'" << endl
 			<< "* To get a list of commands, type 'commands'" << endl
 			<< "* To get a description of any command, just type the command at the 'help>' prompt" << endl << endl;
-		
+
 		string helpInput;
 		do {
 			cout << "help> ";
@@ -132,6 +153,7 @@ public:
 		} while (helpInput != "exit");
 	}
 
+
 	void help(string command) {
 		if (command == "clear" || command == "clear()") //describes all the commands
 		{
@@ -158,7 +180,7 @@ public:
 			cout << "Error unrecognized command." << endl;
 			return;
 		}
-		
+
 		string exitInput; //loop to exit
 		do
 		{
@@ -175,8 +197,10 @@ public:
 
 	}
 
+
 	void read(string filename) {
 		programCode.clear(); //clears any data in the data structure
+		int lineCount = 0;
 		string fileLine;
 		ifstream file;
 		file.open(filename); //opens file
@@ -189,26 +213,61 @@ public:
 		{
 			getline(file, fileLine); //retrives entire line
 			programCode.push_back(fileLine); //stores in vector
+			lex.startLexAnalysis(fileLine, lineCount); //sends line to startlexanalysis
+			lineCount++;
 		}
 		file.close(); //close file when done
+				
 	}
 
+
 	void show() {
+		cout << endl;
 		for (int i = 0; i < programCode.size(); i++) //displays all lines stored in the vector
 		{
 			cout << "[" << i << "] " << programCode[i] << endl;
 		}
+		
 	}
+
 
 	void clear() {
+
 		programCode.clear(); //deletes all lines from the vector
+		lex.clear(); //calls function from lexanalyzer class
 	}
 
+
+	void show(string tokens)
+	{
+		if (tokens != "tokens")
+		{
+			cout << "Error unrecognized command." << endl;
+			return;
+		}
+				
+		lex.show(); //calls function from lexanalyzer class
+	}
+
+
+	vector<string> importData() //creates a vector that can transfer data from programCode to lex analyzer class
+	{
+		vector<string> data;
+
+		for (int i = 0; i < programCode.size(); i++)
+		{
+			data.push_back(programCode[i]);
+		}
+
+		return data;
+	}
+
+
 private:
+
 	typedef vector<string> programType;
 	programType programCode; //vector<string> holding all the lines from python files
+
 };
-
-
 
 #endif
